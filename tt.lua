@@ -120,8 +120,17 @@ local cmds = {
    sheet = sheet_list
 }
 
+local shortcuts = {
+   i = "in",
+   o = "out",
+   d = "display",
+   b = "backend",
+   s = "sheet"
+}
+
 function main()
    local args = parser:parse()
+   args.cmd = shortcuts[args.cmd] or args.cmd
 
    if cmds[args.cmd] then
       if args.cmd == "display" then
