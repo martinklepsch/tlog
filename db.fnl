@@ -15,33 +15,35 @@
 
 (local db {})
 (tset db :tt_file "/Users/martinklepsch/Documents/Timetracking/testing.sqlite.db")
-(local conn (: env :connect db.tt_file))
 
-(fn db.get_entries []
+(lambda db.connect [file]
+  (: env :connect file))
+
+(lambda db.get_entries [conn]
   (read_cursor (: conn :execute "SELECT * FROM entries")))
 
-(fn db.get_meta []
+(lambda db.get_meta [conn]
   (let [c (read_cursor (: conn :execute "SELECT * FROM meta"))]
     (M.reduce c (fn [acc x] (tset acc (. x :key) (. x :value)) acc) {})))
 
-(lambda db.switch_sheet [new_sheet]
+(lambda db.switch_sheet [conn new_sheet]
   (let [current (-> (: conn :execute "SELECT value FROM meta WHERE key = 'current_sheet'")
                     (read_cursor)
                     (. 1 :value))]
     (: conn :execute (string.format "UPDATE meta SET value = '%s' where key = 'current_sheet'" new_sheet))
     (: conn :execute (string.format "UPDATE meta SET value = '%s' where key = 'last_sheet'" current))))
 
-(fn db.running_entries []
-  (read_cursor (: conn :execute "SELECT * FROM entries WHERE end IS NULL")))
+;; (fn db.running_entries []
+;;   (read_cursor (: conn :execute "SELECT * FROM entries WHERE end IS NULL")))
 
-(lambda db.clock_in [sheet note]
+(lambda db.clock_in [conn sheet note]
   (: conn :execute (string.format "insert into entries (note, start, sheet) VALUES ('%s', datetime(), '%s')"
                                 note sheet)))
 
-(lambda db.clock_out [id end]
+(lambda db.clock_out [conn id end]
   (: conn :execute (string.format "UPDATE entries SET end = '%s' WHERE id = %s" end id)))
 
-(lambda db.kill [id]
+(lambda db.kill [conn id]
   (: conn :execute (.. "DELETE FROM entries WHERE id = " id)))
 
 db

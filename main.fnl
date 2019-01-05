@@ -3,9 +3,9 @@
 (local inspect (require "inspect"))
 (fn p [d] (-> d (inspect) (print)))
 
-(local tt (require "tt"))
 (local date (require "date"))
 (local db (require "db"))
+(local db_conn (db.connect db.tt_file))
 (local M (require "moses"))
 ;; TODO open bug that those are not equivalent
 ;; parser:option "-f" "--from"
@@ -83,11 +83,11 @@
 (fn sheets [entries meta sheet_name]
   (if (= sheet_name "-")
       (do (print (.. "Switching to sheet " (. meta :last_sheet)))
-          (db.switch_sheet (. meta :last_sheet)))
+          (db.switch_sheet db_conn (. meta :last_sheet)))
 
       sheet_name
       (do (print (.. "Switching to sheet " sheet_name))
-          (db.switch_sheet sheet_name))
+          (db.switch_sheet db_conn sheet_name))
 
       (sheet_list entries meta)))
 
@@ -96,7 +96,7 @@
     (if (= 0 (M.count running))
         (do
           (print (.. "Starting new entry in " (. meta :current_sheet)))
-          (p (db.clock_in (. meta :current_sheet) "my note")))
+          (p (db.clock_in db_conn (. meta :current_sheet) "my note")))
         (do (print "Running entry, please sign out first")
             (p (. running 1))))))
 
@@ -115,14 +115,14 @@
 (lambda clock_out [entries]
   (let [[e] (M.reject entries (fn [e] (. e :end)))]
     (if e
-        (do (db.clock_out (. e :id) (date true))
+        (do (db.clock_out db_conn (. e :id) (date true))
             (print (.. "Clocked out of " (. e :sheet))))
         (print "No running entry"))))
 
 (lambda kill [entries id]
   (let [[entry] (M.filter entries (fn [e] (= (. e :id) id)))]
     (when (util.confirm (string.format "Delete entry with ID %s from sheet '%s'?" id (. entry :sheet)))
-      (db.kill id))))
+      (db.kill db_conn id))))
 
 (local shortcuts
        {:i "in"
@@ -136,8 +136,8 @@
   (tset args :cmd (or (. shortcuts (. args :command))
                       (. args :command)))
   (p args)
-  (let [entries (db.get_entries)
-        meta    (db.get_meta)]
+  (let [entries (db.get_entries db_conn)
+        meta    (db.get_meta db_conn)]
     (if (. args :backend)
         (os.execute (.. "sqlite3 " (. db :tt_file)))
 
