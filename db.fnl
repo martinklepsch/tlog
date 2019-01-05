@@ -1,10 +1,7 @@
-(local tt_file "/Users/martinklepsch/Documents/Timetracking/testing.sqlite.db")
-
 (local driver (require "luasql.sqlite3"))
 (local M (require "moses"))
 
 (local env (driver.sqlite3))
-(local conn (: env :connect tt_file))
 
 (fn read_cursor [sql_cursor]
   (var arr [])
@@ -17,6 +14,8 @@
   arr)
 
 (local db {})
+(tset db :tt_file "/Users/martinklepsch/Documents/Timetracking/testing.sqlite.db")
+(local conn (: env :connect db.tt_file))
 
 (fn db.get_entries []
   (read_cursor (: conn :execute "SELECT * FROM entries")))
