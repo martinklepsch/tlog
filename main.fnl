@@ -33,6 +33,8 @@
     (: :argument "sheet" "The sheet to switch to")
     (: :args "?"))
 
+(local g {}) ; A container for global state
+
 (local util {})
 (lambda util.group_by_sheet [entries]
   (M.groupBy entries (fn [e] (. e :sheet))))
@@ -83,11 +85,11 @@
 (fn sheets [entries meta sheet_name]
   (if (= sheet_name "-")
       (do (print (.. "Switching to sheet " (. meta :last_sheet)))
-          (db.switch_sheet db_conn (. meta :last_sheet)))
+          (db.switch_sheet g.db_conn (. meta :last_sheet)))
 
       sheet_name
       (do (print (.. "Switching to sheet " sheet_name))
-          (db.switch_sheet db_conn sheet_name))
+          (db.switch_sheet g.db_conn sheet_name))
 
       (sheet_list entries meta)))
 
@@ -96,7 +98,7 @@
     (if (= 0 (M.count running))
         (do
           (print (.. "Starting new entry in " (. meta :current_sheet)))
-          (p (db.clock_in db_conn (. meta :current_sheet) "my note")))
+          (p (db.clock_in g.db_conn (. meta :current_sheet) "my note")))
         (do (print "Running entry, please sign out first")
             (p (. running 1))))))
 
@@ -115,14 +117,14 @@
 (lambda clock_out [entries]
   (let [[e] (M.reject entries (fn [e] (. e :end)))]
     (if e
-        (do (db.clock_out db_conn (. e :id) (date true))
+        (do (db.clock_out g.db_conn (. e :id) (date true))
             (print (.. "Clocked out of " (. e :sheet))))
         (print "No running entry"))))
 
 (lambda kill [entries id]
   (let [[entry] (M.filter entries (fn [e] (= (. e :id) id)))]
     (when (util.confirm (string.format "Delete entry with ID %s from sheet '%s'?" id (. entry :sheet)))
-      (db.kill db_conn id))))
+      (db.kill g.db_conn id))))
 
 (local shortcuts
        {:i "in"
@@ -136,8 +138,17 @@
   (tset args :cmd (or (. shortcuts (. args :command))
                       (. args :command)))
   (p args)
-  (let [entries (db.get_entries db_conn)
-        meta    (db.get_meta db_conn)]
+  (let [db_file (or (. args :db)
+                    (os.getenv "FENNEL_TT_FILE"))]
+    (if (util.file_exists db_file)
+        (tset g :db_conn (db.connect db_file))
+        (tset g :db_conn db_file)
+        (do (print (.. "Database file missing: " db_file))
+            (os.exit 1))))
+  (let [entries (db.get_entries g.db_conn)
+        meta    (db.get_meta g.db_conn)
+        ts      (when (. args :at)
+                  (humantime.from_human_desc (. args :at)))]
     (if (. args :backend)
         (os.execute (.. "sqlite3 " (. db :tt_file)))
 
