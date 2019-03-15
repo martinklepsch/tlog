@@ -1,9 +1,7 @@
 (local M (require "moses"))
 (local date (require "date"))
 
-(local f "logs.time")
-
-(M.map {"abc" :some, "efg" :more} (fn [[v k]] k))
+;; (local f "logs.time")
 
 ;; always store timezones as UTC(?)
 ;; pro: timezone independence
@@ -32,7 +30,7 @@
 (lambda read_file [filename]
   (var arr [])
   (var done? false)
-  (let [h (assert (io.open f "r"))]
+  (let [h (assert (io.open filename "r"))]
     (while (not done?)
       (local l (: h :read))
       (if (= l nil)

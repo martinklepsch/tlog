@@ -137,8 +137,6 @@
 
 (fn main []
   (local args (: parser :parse))
-  (tset args :cmd (or (. shortcuts (. args :command))
-                      (. args :command)))
   (let [db_file (or (. args :db)
                     (os.getenv "FENNEL_TT_FILE"))]
     (tset g :db_conn db_file))
