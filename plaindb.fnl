@@ -1,5 +1,5 @@
-(local M (require "moses"))
-(local date (require "date"))
+(local M (require "deps.moses"))
+(local date (require "deps.date"))
 
 ;; (local f "logs.time")
 

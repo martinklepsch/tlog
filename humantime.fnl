@@ -1,4 +1,4 @@
-(local date (require "date")) ;http://tieske.github.io/date/#date
+(local date (require "deps.date")) ;http://tieske.github.io/date/#date
 
 (local api {})
 

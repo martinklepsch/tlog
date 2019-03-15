@@ -1,17 +1,17 @@
 #!/usr/bin/env fennel
 
-(local inspect (require "inspect"))
+(local inspect (require "fennelview"))
 (fn p [d] (-> d (inspect) (print)))
 
-(local date (require "date"))
+(local date (require "deps.date"))
 (local db (require "plaindb"))
 (local humantime (require "humantime"))
-(local M (require "moses"))
+(local M (require "deps.moses"))
 ;; TODO open bug that those are not equivalent
 ;; parser:option "-f" "--from"
 ;; parser:option "-f --from"
 ;; with the first option the option is registered as `f` not `from`
-(local argparse (require "argparse"))
+(local argparse (require "deps.argparse"))
 
 (local parser (argparse {:name "tt"
                          :description "A small, fast time tracking utility backed by SQLite."}))
