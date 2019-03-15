@@ -4,8 +4,8 @@
 (fn p [d] (-> d (inspect) (print)))
 
 (local date (require "date"))
-(local db (require "db"))
-(local db_conn (db.connect db.tt_file))
+(local db (require "plaindb"))
+(local humantime (require "humantime"))
 (local M (require "moses"))
 ;; TODO open bug that those are not equivalent
 ;; parser:option "-f" "--from"
@@ -26,8 +26,8 @@
     (: :option "--at"))
 (-> (: parser :command "kill")
     (: :option "-i --id"))
-(-> (: parser :command "sheets")
-    (: :argument "sheet" "The sheet to switch to")
+(-> (: parser :command "sheet")
+    (: :argument "sheet_name" "The sheet to switch to")
     (: :args "?"))
 (-> (: parser :command "display")
     (: :argument "sheet" "The sheet to switch to")
@@ -40,7 +40,7 @@
   (M.groupBy entries (fn [e] (. e :sheet))))
 
 (lambda util.add_minutes [entry]
-  (let [end (or (. entry :end) (date true))]
+  (let [end (or (. entry :end) (date false))]
     (tset entry :diff (date.diff end (. entry :start)))
     (tset entry :minutes (: entry.diff :spanminutes))
     entry))
@@ -93,12 +93,12 @@
 
       (sheet_list entries meta)))
 
-(lambda clock_in [entries meta]
+(lambda clock_in [entries meta ts]
   (let [[running] (M.reject entries (fn [e] (. e :end)))]
     (if (= 0 (M.count running))
         (do
           (print (.. "Starting new entry in " (. meta :current_sheet)))
-          (p (db.clock_in g.db_conn (. meta :current_sheet) "my note")))
+          (p (db.clock_in g.db_conn (. meta :current_sheet) ts)))
         (do (print "Running entry, please sign out first")
             (p (. running 1))))))
 
@@ -109,15 +109,17 @@
     (M.each (or (. by_sheet sheet) [])
             (fn [entry]
               (let [start (date (. entry :start))
-                    end   (date (or (. entry :end) true))]
+                    end   (date (or (. entry :end) false))]
                 (print (.. (: start :fmt "%a %b %d, %Y") "   " (: start :fmt "%H:%M") " - " (: end :fmt "%H:%M")
-                           "   " (util.duration [entry]) "  (" (. entry :id) ")")))))
+                           "   " (util.duration [entry])
+                           "  (" (. entry :start_line) ", " (or (. entry :end_line) "") ")"
+                           (if (. entry :end) "" "  <-- RUNNING"))))))
     (print (.. "Total: " (util.duration (. by_sheet sheet))))))
 
-(lambda clock_out [entries]
+(lambda clock_out [entries ts]
   (let [[e] (M.reject entries (fn [e] (. e :end)))]
     (if e
-        (do (db.clock_out g.db_conn (. e :id) (date true))
+        (do (db.clock_out g.db_conn (. e :sheet) (or ts (date false)))
             (print (.. "Clocked out of " (. e :sheet))))
         (print "No running entry"))))
 
@@ -137,35 +139,30 @@
   (local args (: parser :parse))
   (tset args :cmd (or (. shortcuts (. args :command))
                       (. args :command)))
-  (p args)
   (let [db_file (or (. args :db)
                     (os.getenv "FENNEL_TT_FILE"))]
-    (if (util.file_exists db_file)
-        (tset g :db_conn (db.connect db_file))
-        (tset g :db_conn db_file)
-        (do (print (.. "Database file missing: " db_file))
-            (os.exit 1))))
+    (tset g :db_conn db_file))
   (let [entries (db.get_entries g.db_conn)
         meta    (db.get_meta g.db_conn)
         ts      (when (. args :at)
                   (humantime.from_human_desc (. args :at)))]
     (if (. args :backend)
-        (os.execute (.. "sqlite3 " (. db :tt_file)))
+        (os.execute (.. "$EDITOR " (. g :db_conn)))
 
         (. args :display)
         (sheet_display entries meta (. args :sheet))
 
-        (. args :sheets)
-        (sheets entries meta (. args :sheet))
+        (. args :sheet)
+        (sheets entries meta (. args :sheet_name))
 
         (. args :kill)
         (kill (tonumber (. args :id)))
 
         (. args :in)
-        (clock_in)
+        (clock_in entries meta (or ts (date false)))
 
         (. args :out)
-        (clock_out entries)
+        (clock_out entries (or ts (date false)))
 
         ;; else
         (print "Not yet implemented"))))
