@@ -20,6 +20,7 @@
 
 (: parser :command_target "command")
 (: parser :command "backend")
+(: parser :command "status")
 (-> (: parser :command "in")
     (: :option "--at"))
 (-> (: parser :command "out")
@@ -51,9 +52,8 @@
             total_minutes (M.sum (M.map w_minutes (fn [e] (. e :minutes))))
             hours (math.floor (/ total_minutes 60))
             minutes (math.floor (% total_minutes 60))]
-        (.. hours ":" minutes "h"))
-
-      "00:00h"))
+        (string.format "%02d:%02d" hours minutes))
+      "00:00"))
 
 (lambda util.confirm [question]
   (var answer nil)
@@ -98,9 +98,15 @@
     (if (= 0 (M.count running))
         (do
           (print (.. "Starting new entry in " (. meta :current_sheet)))
-          (p (db.clock_in g.db_conn (. meta :current_sheet) ts)))
+          (db.clock_in g.db_conn (. meta :current_sheet) ts))
         (do (print "Running entry, please sign out first")
             (p (. running 1))))))
+
+(lambda status_display [entries]
+  (let [[running] (M.reject entries (fn [e] (. e :end)))]
+    (if (= 0 (M.count running))
+        (print "off")
+        (print (.. (. running :sheet) " " (util.duration [running]))))))
 
 (fn sheet_display [entries meta sheet_name]
   (let [by_sheet (util.group_by_sheet (M.map entries util.add_minutes))
@@ -146,6 +152,9 @@
                   (humantime.from_human_desc (. args :at)))]
     (if (. args :backend)
         (os.execute (.. "$EDITOR " (. g :db_conn)))
+
+        (. args :status)
+        (status_display entries)
 
         (. args :display)
         (sheet_display entries meta (. args :sheet))
