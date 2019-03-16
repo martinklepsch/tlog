@@ -179,7 +179,10 @@
         (. args :out)
         (clock_out entries (or ts (date false)))
 
-        ;; else, display stuff
-        (sheet_display entries meta (. args :sheet)))))
+        ;; If there are any entries
+        (next entries)
+        (sheet_display entries meta (. args :sheet))
+
+        (print (.. "No data in '" g.db_conn "'")))))
 
 (main)
