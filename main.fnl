@@ -76,6 +76,11 @@
           (set answer false))))
   answer)
 
+(lambda util.file_exists [name]
+  (match (io.open name)
+    (nil msg) false
+    f (do (io.close f) true)))
+
 (lambda sheet_list [entries meta]
   (let [by_sheet (util.group_by_sheet (M.map entries util.add_minutes))
         is_current_or_last? (fn is_current_or_last [sheet]
@@ -149,11 +154,22 @@
         :b "backend"
         :s "sheet"})
 
+(fn init_db [db_arg]
+  (let [db_file (or db_arg (os.getenv "TLOG_FILE"))]
+    (if (and db_file (util.file_exists db_file))
+        (tset g :db_conn db_file)
+
+        (and db_file (not (util.file_exists db_file)))
+        (do (print (.. "File does not exist: '" db_file "', please create it first"))
+            (os.exit 1))
+
+        (not db_file)
+        (do (print (.. "Please specify a file via --db or $TLOG_FILE"))
+            (os.exit 1)))))
+
 (fn main []
   (local args (: parser :parse))
-  (let [db_file (or (. args :db)
-                    (os.getenv "TLOG_FILE"))]
-    (tset g :db_conn db_file))
+  (init_db (. args :db))
   (let [entries (db.get_entries g.db_conn)
         meta    (db.get_meta g.db_conn)
         ts      (when (. args :at)
