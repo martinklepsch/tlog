@@ -144,7 +144,7 @@
 (fn main []
   (local args (: parser :parse))
   (let [db_file (or (. args :db)
-                    (os.getenv "FENNEL_TT_FILE"))]
+                    (os.getenv "TLOG_FILE"))]
     (tset g :db_conn db_file))
   (let [entries (db.get_entries g.db_conn)
         meta    (db.get_meta g.db_conn)
