@@ -9,9 +9,11 @@ _build/%.lua: %.fnl _build
 _build/fennelview.lua:
 	curl https://raw.githubusercontent.com/bakpakin/Fennel/master/fennelview.fnl.lua -o $@
 
-_build/bin: _build/plaindb.lua _build/humantime.lua _build/main.lua deps/date.lua deps/argparse.lua deps/moses.lua _build/fennelview.lua
+_build/t: _build/plaindb.lua _build/humantime.lua _build/main.lua deps/date.lua deps/argparse.lua deps/moses.lua _build/fennelview.lua bin-head
 	cp -r deps _build/
-	luac -o $@ $^
+	cat bin-head > $@
+	cat _build/main.lua >> $@
+	chmod +x $@
 
 deps/date.lua: deps
 	curl https://raw.githubusercontent.com/Tieske/date/master/src/date.lua -o $@
@@ -22,5 +24,7 @@ deps/argparse.lua: deps
 deps/moses.lua: deps
 	curl https://raw.githubusercontent.com/Yonaba/Moses/master/moses.lua -o $@
 
-# export LUA_CPATH='/Users/martinklepsch/.luarocks/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/loadall.so;./?.so'
-# export PATH='/Users/martinklepsch/.luarocks/bin:/usr/local/bin:/Users/martinklepsch/code/08-go/bin:/Users/martinklepsch/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/MacGPG2/bin'
+clean:
+	rm -rf deps _build
+
+.PHONY: clean
