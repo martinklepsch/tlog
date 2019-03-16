@@ -14,24 +14,31 @@
 (local argparse (require "deps.argparse"))
 
 (local parser (argparse {:name "tt"
-                         :description "A small, fast time tracking utility backed by SQLite."
+                         :description "A small, fast time tracking utility backed by a plaintext file."
                          :require_command false}))
 
 (: (: parser :option "--db") :args 1)
 
 (: parser :command_target "command")
-(: parser :command "backend")
-(: parser :command "status")
+(-> (: parser :command "backend")
+    (: :description "Open file with $EDITOR"))
+(-> (: parser :command "status")
+    (: :description "Print minimal information about current session"))
 (-> (: parser :command "in")
+    (: :description "Start the timer in the current sheet")
     (: :option "--at"))
 (-> (: parser :command "out")
+    (: :description "Stop the currently running timer")
     (: :option "--at"))
 (-> (: parser :command "kill")
+    (: :description "NOT IMPLEMENTED")
     (: :option "-i --id"))
 (-> (: parser :command "sheet")
+    (: :description "Show the currently selected sheet or switch to one")
     (: :argument "sheet_name" "The sheet to switch to")
     (: :args "?"))
 (-> (: parser :command "display")
+    (: :description "Display a list of all entries for the current sheet")
     (: :argument "sheet" "The sheet to switch to")
     (: :args "?"))
 
