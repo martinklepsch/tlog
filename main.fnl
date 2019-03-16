@@ -14,7 +14,8 @@
 (local argparse (require "deps.argparse"))
 
 (local parser (argparse {:name "tt"
-                         :description "A small, fast time tracking utility backed by SQLite."}))
+                         :description "A small, fast time tracking utility backed by SQLite."
+                         :require_command false}))
 
 (: (: parser :option "--db") :args 1)
 
@@ -171,7 +172,7 @@
         (. args :out)
         (clock_out entries (or ts (date false)))
 
-        ;; else
-        (print "Not yet implemented"))))
+        ;; else, display stuff
+        (sheet_display entries meta (. args :sheet)))))
 
 (main)
