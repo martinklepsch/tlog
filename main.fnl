@@ -13,11 +13,13 @@
 ;; with the first option the option is registered as `f` not `from`
 (local argparse (require "deps.argparse"))
 
-(local parser (argparse {:name "tt"
+(local parser (argparse {:name "t"
                          :description "A small, fast time tracking utility backed by a plaintext file."
                          :require_command false}))
 
-(: (: parser :option "--db") :args 1)
+(-> (: parser :option "--db")
+    (: :description "Use the provided file as database (default: $TLOG_FILE)")
+    (: :args 1))
 
 (: parser :command_target "command")
 (-> (: parser :command "backend")
@@ -26,10 +28,12 @@
     (: :description "Print minimal information about current session"))
 (-> (: parser :command "in")
     (: :description "Start the timer in the current sheet")
-    (: :option "--at"))
+    (: :option "--at")
+    (: :description "A specification of time (e.g. '10min ago', '10:30 yesterday')"))
 (-> (: parser :command "out")
     (: :description "Stop the currently running timer")
-    (: :option "--at"))
+    (: :option "--at")
+    (: :description "A specification of time (e.g. '10min ago', '10:30 yesterday')"))
 (-> (: parser :command "kill")
     (: :description "NOT IMPLEMENTED")
     (: :option "-i --id"))
