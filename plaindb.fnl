@@ -35,7 +35,9 @@
       (local l (: h :read))
       (if (= l nil)
           (set done? true)
-          (table.insert arr l))))
+          (when (and (not (= 0 (string.len l)))
+                     (not (= 35 (string.byte l 1)))) ; byte of # for comments
+            (table.insert arr l)))))
   arr)
 
 (lambda tokenize_line [line]
