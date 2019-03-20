@@ -125,18 +125,30 @@
         (print "off")
         (print (.. (. running :sheet) " " (util.duration [running]))))))
 
+(lambda print-single-entry [entry include-date]
+  (let [start (date (. entry :start))
+        end   (date (or (. entry :end) false))]
+    (print (.. (if include-date
+                   (: start :fmt "%a %b %d, %Y")
+                   (string.format "%16s" ""))
+               "   " (: start :fmt "%H:%M")
+               " - " (: end :fmt "%H:%M")
+               "   " (util.duration [entry])
+               "  (" (. entry :start_line) ", " (or (. entry :end_line) "") ")"
+               (if (. entry :end) "" "  <-- RUNNING")))))
+
 (fn sheet_display [entries meta sheet_name]
   (let [by_sheet (util.group_by_sheet (M.map entries util.add_minutes))
-        sheet    (or sheet_name (. meta :current_sheet))]
+        sheet    (or sheet_name (. meta :current_sheet))
+        entries  (or (. by_sheet sheet) [])]
     (print (.. "Timesheet: " sheet))
-    (M.each (or (. by_sheet sheet) [])
-            (fn [entry]
-              (let [start (date (. entry :start))
-                    end   (date (or (. entry :end) false))]
-                (print (.. (: start :fmt "%a %b %d, %Y") "   " (: start :fmt "%H:%M") " - " (: end :fmt "%H:%M")
-                           "   " (util.duration [entry])
-                           "  (" (. entry :start_line) ", " (or (. entry :end_line) "") ")"
-                           (if (. entry :end) "" "  <-- RUNNING"))))))
+    (-> entries
+        (M.chunk (fn [entry]
+                   (: (date (. entry :start)) :fmt "%Y-%m-%d")))
+        (M.each (fn [days-entries]
+                  (print-single-entry (M.nth days-entries 1) true)
+                  (M.each (M.rest days-entries 2) (fn [e] (print-single-entry e false)))
+                  (print (.. (string.format "%40s" (util.duration days-entries)))))))
     (print (.. "Total: " (util.duration (. by_sheet sheet))))))
 
 (lambda clock_out [entries ts]
