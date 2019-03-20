@@ -34,7 +34,9 @@
     (while (not done?)
       (local l (: h :read))
       (if (= l nil)
-          (set done? true)
+          (do (set done? true)
+              ;; TODO (io.close h)
+              )
           (when (and (not (= 0 (string.len l)))
                      (not (= 35 (string.byte l 1)))) ; byte of # for comments
             (table.insert arr l)))))
