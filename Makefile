@@ -24,6 +24,9 @@ deps/argparse.lua: deps
 deps/moses.lua: deps
 	curl https://raw.githubusercontent.com/Yonaba/Moses/master/moses.lua -o $@
 
+deps/ansicolors.lua: deps
+	curl https://raw.githubusercontent.com/kikito/ansicolors.lua/master/ansicolors.lua -o $@
+
 clean:
 	rm -rf deps _build
 

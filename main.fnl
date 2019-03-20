@@ -7,6 +7,7 @@
 (local db (require "plaindb"))
 (local humantime (require "humantime"))
 (local M (require "deps.moses"))
+(local colors (require "deps.ansicolors"))
 ;; TODO open bug that those are not equivalent
 ;; parser:option "-f" "--from"
 ;; parser:option "-f --from"
@@ -128,14 +129,15 @@
 (lambda print-single-entry [entry include-date]
   (let [start (date (. entry :start))
         end   (date (or (. entry :end) false))]
-    (print (.. (if include-date
-                   (: start :fmt "%a %b %d, %Y")
-                   (string.format "%16s" ""))
-               "   " (: start :fmt "%H:%M")
-               " - " (: end :fmt "%H:%M")
-               "   " (util.duration [entry])
-               "  (" (. entry :start_line) ", " (or (. entry :end_line) "") ")"
-               (if (. entry :end) "" "  <-- RUNNING")))))
+    (print (colors
+            (.. (if include-date
+                    (: start :fmt "%a %b %d, %Y")
+                    (string.format "%16s" ""))
+                "   " (: start :fmt "%H:%M")
+                " - " (: end :fmt "%H:%M")
+                "   " (util.duration [entry])
+                "  %{dim}(" (. entry :start_line) ", " (or (. entry :end_line) "") ")"
+                (if (. entry :end) "" "  <-- RUNNING"))))))
 
 (fn sheet_display [entries meta sheet_name]
   (let [by_sheet (util.group_by_sheet (M.map entries util.add_minutes))
@@ -148,7 +150,7 @@
         (M.each (fn [days-entries]
                   (print-single-entry (M.nth days-entries 1) true)
                   (M.each (M.rest days-entries 2) (fn [e] (print-single-entry e false)))
-                  (print (.. (string.format "%40s" (util.duration days-entries)))))))
+                  (print (colors (.. "%{bright}" (string.format "%40s" (util.duration days-entries)) "%{reset}"))))))
     (print (.. "Total: " (util.duration (. by_sheet sheet))))))
 
 (lambda clock_out [entries ts]
