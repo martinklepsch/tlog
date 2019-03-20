@@ -174,35 +174,36 @@
 (fn main []
   (local args (: parser :parse))
   (init_db (. args :db))
-  (let [entries (db.get_entries g.db_conn)
-        meta    (db.get_meta g.db_conn)
-        ts      (when (. args :at)
-                  (humantime.from_human_desc (. args :at)))]
-    (if (. args :backend)
-        (os.execute (.. "$EDITOR " (. g :db_conn)))
+  (if (. args :backend)
+      (os.execute (.. "$EDITOR " (. g :db_conn)))
 
-        (. args :status)
-        (status_display entries)
+      (let [entries (db.get_entries g.db_conn)
+            meta    (db.get_meta g.db_conn)
+            ts      (when (. args :at)
+                      (humantime.from_human_desc (. args :at)))]
+        (if
+         (. args :status)
+         (status_display entries)
 
-        (. args :display)
-        (sheet_display entries meta (. args :sheet))
+         (. args :display)
+         (sheet_display entries meta (. args :sheet))
 
-        (. args :sheet)
-        (sheets entries meta (. args :sheet_name))
+         (. args :sheet)
+         (sheets entries meta (. args :sheet_name))
 
-        (. args :kill)
-        (kill (tonumber (. args :id)))
+         (. args :kill)
+         (kill (tonumber (. args :id)))
 
-        (. args :in)
-        (clock_in entries meta (or ts (date false)))
+         (. args :in)
+         (clock_in entries meta (or ts (date false)))
 
-        (. args :out)
-        (clock_out entries (or ts (date false)))
+         (. args :out)
+         (clock_out entries (or ts (date false)))
 
-        ;; If there are any entries
-        (next entries)
-        (sheet_display entries meta (. args :sheet))
+         ;; If there are any entries
+         (next entries)
+         (sheet_display entries meta (. args :sheet))
 
-        (print (.. "No data in '" g.db_conn "'")))))
+         (print (.. "No data in '" g.db_conn "'"))))))
 
 (main)
